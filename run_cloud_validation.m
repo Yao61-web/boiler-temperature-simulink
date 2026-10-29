@@ -3,6 +3,7 @@ function run_cloud_validation
 here = fileparts(mfilename('fullpath'));
 cd(here);
 dest=fullfile(here,'validation'); mkdir(dest);
+mdl_dest=fullfile(here,'generated_mdl'); mkdir(mdl_dest);
 diary(fullfile(dest,'cloud_validation_log.txt'));
 fprintf('MATLAB release %s\n',version('-release'));
 fprintf('Commit %s\n',getenv('GITHUB_SHA'));
@@ -32,9 +33,9 @@ for j=1:2
     load_system(fullfile(here,'generated_slx',[mdl '.slx']));
     set_param(mdl,'SimulationCommand','update');
     % Save MDL with the official serializer as a secondary source format.
-    save_system(mdl,fullfile(here,'generated_slx',[mdl '.mdl']));
+    save_system(mdl,fullfile(mdl_dest,[mdl '.mdl']));
     close_system(mdl,0);
-    load_system(fullfile(here,'generated_slx',[mdl '.mdl']));
+    load_system(fullfile(mdl_dest,[mdl '.mdl']));
     set_param(mdl,'SimulationCommand','update');
     close_system(mdl,0);
     for k=1:5

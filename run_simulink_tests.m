@@ -27,7 +27,7 @@ for j = 1:2
     mdl = models{j};
     assert(~bdIsLoaded(mdl),'Close %s before running; unsaved work is protected.',mdl);
     path_slx = fullfile(here,'generated_slx',[mdl '.slx']);
-    if exist(path_slx,'file'), source=path_slx; else, source=fullfile(here,[mdl '.mdl']); end
+    if exist(path_slx,'file'), source=path_slx; else, source=fullfile(here,'legacy_mdl',[mdl '.mdl']); end
     paths{j}=source;
     fprintf('Model source: %s\n',source);
     load_system(source);
@@ -104,8 +104,9 @@ in = in.setModelParameter('StopTime','200','Solver','ode45','SolverType','Variab
     'RelTol','1e-6','AbsTol','1e-8','MaxStep',num2str(max_step,17),'ReturnWorkspaceOutputs','on');
 names={'Reference','LoadDisturbance','FuelDisturbance'};
 for n=1:3
-    in=in.setBlockParameter([mdl '/' names{n}], ...
-        'Before','0','After',num2str(c(2*n-1),17),'Time',num2str(c(2*n),17));
+    in=in.setBlockParameter([mdl '/' names{n}],'Before','0');
+    in=in.setBlockParameter([mdl '/' names{n}],'After',num2str(c(2*n-1),17));
+    in=in.setBlockParameter([mdl '/' names{n}],'Time',num2str(c(2*n),17));
 end
 in=in.setBlockParameter([mdl '/TemperatureDynamics'],'Denominator',sprintf('[%.17g 1]',c(7)));
 in=in.setBlockParameter([mdl '/PureDelay'],'DelayTime',num2str(c(8),17));

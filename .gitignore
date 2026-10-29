@@ -3,3 +3,5 @@ results_*/
 slprj/
 *.slxc
 *.autosave
+generated_mdl/
+validation/

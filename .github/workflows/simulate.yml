@@ -7,6 +7,8 @@ jobs:
   simulate:
     runs-on: ubuntu-22.04
     timeout-minutes: 45
+    env:
+      DISPLAY: ":99"
     steps:
       - name: Check out models
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -17,10 +19,13 @@ jobs:
         with:
           release: R2025b
           products: Simulink
+      - name: Start virtual display for Simulink diagram export
+        run: Xvfb :99 -screen 0 1920x1080x24 > /tmp/simulink-xvfb.log 2>&1 &
       - name: Build and simulate block diagrams
         uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5 # v3
         with:
           command: run_cloud_validation;
+          startup-options: -display :99
       - name: Save models, raw data, figures and execution logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -28,6 +33,7 @@ jobs:
           name: simulink-results
           path: |
             generated_slx/
+            generated_mdl/
             results_*/
             validation/
           if-no-files-found: warn
