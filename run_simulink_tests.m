@@ -88,6 +88,17 @@ for k=1:5
         title(case_names{k},'Interpreter','none'); grid on;
     end
     print(f,fullfile(result_dir,[case_names{k} '_comparison.png']),'-dpng','-r180'); close(f);
+    % A readable temperature-only chart for the printed report.
+    f=figure('Visible','off','Color','w','Position',[50 50 1000 420]); hold on;
+    for j=1:2
+        [t,x]=unpack(raw{j,k}); plot(t,x(:,2),'LineWidth',2);
+    end
+    [t,x]=unpack(raw{1,k}); plot(t,x(:,1),'k--','LineWidth',1.3);
+    set(gca,'FontSize',16); grid on; box on;
+    xlabel('Time (s)'); ylabel('Temperature deviation');
+    legend('Single loop','Cascade','Reference','Location','best','FontSize',13);
+    title(case_names{k},'Interpreter','none');
+    print(f,fullfile(result_dir,[case_names{k} '_temperature.png']),'-dpng','-r180'); close(f);
 end
 f=fopen(fullfile(result_dir,'validation_status.txt'),'w');
 fprintf(f,'Simulink simulation and data export completed.\n');
