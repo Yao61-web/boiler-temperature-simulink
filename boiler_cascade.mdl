@@ -1,0 +1,282 @@
+Model {
+  Name "boiler_cascade"
+  Version 7.0
+  MdlSubVersion 0
+  SavedCharacterEncoding "UTF-8"
+  StartTime "0"
+  StopTime "200"
+  Solver "ode45"
+  SolverType "Variable-step"
+  RelTol "1e-6"
+  AbsTol "1e-8"
+  MaxStep "0.02"
+  SaveTime on
+  TimeSaveName "tout"
+  SaveOutput off
+  System {
+    Name "boiler_cascade"
+    Location [20, 40, 1430, 740]
+    Open on
+    Block {
+      BlockType Step
+      Name "Reference"
+      Position [30, 100, 70, 130]
+      Time "10"
+      Before "0"
+      After "1"
+      SampleTime "0"
+    }
+    Block {
+      BlockType Sum
+      Name "TemperatureError"
+      Position [115, 98, 140, 133]
+      Inputs "+-"
+      IconShape "round"
+    }
+    Block {
+      BlockType TransferFcn
+      Name "TemperaturePI"
+      Position [180, 95, 290, 140]
+      Numerator "[1.05 0.105]"
+      Denominator "[1 0]"
+    }
+    Block {
+      BlockType Sum
+      Name "FlowError"
+      Position [340, 98, 365, 133]
+      Inputs "+-"
+      IconShape "round"
+    }
+    Block {
+      BlockType TransferFcn
+      Name "FlowPI"
+      Position [405, 95, 515, 140]
+      Numerator "[1.3333333333333333 0.6666666666666666]"
+      Denominator "[1 0]"
+    }
+    Block {
+      BlockType Step
+      Name "FuelDisturbance"
+      Position [475, 220, 515, 250]
+      Time "110"
+      Before "0"
+      After "0.2"
+      SampleTime "0"
+    }
+    Block {
+      BlockType Sum
+      Name "FuelInput"
+      Position [565, 98, 590, 133]
+      Inputs "++"
+      IconShape "round"
+    }
+    Block {
+      BlockType TransferFcn
+      Name "FuelDynamics"
+      Position [630, 95, 740, 140]
+      Numerator "[3]"
+      Denominator "[2 1]"
+    }
+    Block {
+      BlockType TransferFcn
+      Name "TemperatureDynamics"
+      Position [800, 95, 910, 140]
+      Numerator "[1]"
+      Denominator "[10 1]"
+    }
+    Block {
+      BlockType TransportDelay
+      Name "PureDelay"
+      Position [960, 95, 1040, 140]
+      DelayTime "3"
+      InitialOutput "0"
+    }
+    Block {
+      BlockType Step
+      Name "LoadDisturbance"
+      Position [805, 220, 845, 250]
+      Time "60"
+      Before "0"
+      After "0.2"
+      SampleTime "0"
+    }
+    Block {
+      BlockType TransferFcn
+      Name "LoadDynamics"
+      Position [895, 215, 1005, 260]
+      Numerator "[1.5]"
+      Denominator "[5 1]"
+    }
+    Block {
+      BlockType Sum
+      Name "TemperatureOutput"
+      Position [1110, 98, 1135, 133]
+      Inputs "++"
+      IconShape "round"
+    }
+    Block {
+      BlockType Mux
+      Name "RecordedSignals"
+      Position [1190, 320, 1195, 560]
+      Inputs "8"
+    }
+    Block {
+      BlockType Scope
+      Name "Scope"
+      Position [1270, 350, 1320, 390]
+      NumInputPorts "1"
+    }
+    Block {
+      BlockType ToWorkspace
+      Name "Record"
+      Position [1240, 480, 1350, 520]
+      VariableName "simdata"
+      SaveFormat "Structure With Time"
+      MaxDataPoints "inf"
+      Decimation "1"
+      SampleTime "-1"
+    }
+    Line {
+      SrcBlock "Reference"
+      SrcPort 1
+      Branch {
+        DstBlock "TemperatureError"
+        DstPort 1
+      }
+      Branch {
+        DstBlock "RecordedSignals"
+        DstPort 1
+      }
+    }
+    Line {
+      SrcBlock "TemperatureError"
+      SrcPort 1
+      Branch {
+        DstBlock "TemperaturePI"
+        DstPort 1
+      }
+      Branch {
+        DstBlock "RecordedSignals"
+        DstPort 3
+      }
+    }
+    Line {
+      SrcBlock "TemperaturePI"
+      SrcPort 1
+      Branch {
+        DstBlock "FlowError"
+        DstPort 1
+      }
+      Branch {
+        DstBlock "RecordedSignals"
+        DstPort 6
+      }
+    }
+    Line {
+      SrcBlock "FlowError"
+      SrcPort 1
+      DstBlock "FlowPI"
+      DstPort 1
+    }
+    Line {
+      SrcBlock "FlowPI"
+      SrcPort 1
+      Branch {
+        DstBlock "FuelInput"
+        DstPort 1
+      }
+      Branch {
+        DstBlock "RecordedSignals"
+        DstPort 4
+      }
+    }
+    Line {
+      SrcBlock "FuelDisturbance"
+      SrcPort 1
+      Branch {
+        DstBlock "FuelInput"
+        DstPort 2
+      }
+      Branch {
+        DstBlock "RecordedSignals"
+        DstPort 8
+      }
+    }
+    Line {
+      SrcBlock "FuelInput"
+      SrcPort 1
+      DstBlock "FuelDynamics"
+      DstPort 1
+    }
+    Line {
+      SrcBlock "FuelDynamics"
+      SrcPort 1
+      Branch {
+        DstBlock "TemperatureDynamics"
+        DstPort 1
+      }
+      Branch {
+        DstBlock "FlowError"
+        DstPort 2
+      }
+      Branch {
+        DstBlock "RecordedSignals"
+        DstPort 5
+      }
+    }
+    Line {
+      SrcBlock "TemperatureDynamics"
+      SrcPort 1
+      DstBlock "PureDelay"
+      DstPort 1
+    }
+    Line {
+      SrcBlock "PureDelay"
+      SrcPort 1
+      DstBlock "TemperatureOutput"
+      DstPort 1
+    }
+    Line {
+      SrcBlock "LoadDisturbance"
+      SrcPort 1
+      Branch {
+        DstBlock "LoadDynamics"
+        DstPort 1
+      }
+      Branch {
+        DstBlock "RecordedSignals"
+        DstPort 7
+      }
+    }
+    Line {
+      SrcBlock "LoadDynamics"
+      SrcPort 1
+      DstBlock "TemperatureOutput"
+      DstPort 2
+    }
+    Line {
+      SrcBlock "TemperatureOutput"
+      SrcPort 1
+      Branch {
+        DstBlock "TemperatureError"
+        DstPort 2
+      }
+      Branch {
+        DstBlock "RecordedSignals"
+        DstPort 2
+      }
+    }
+    Line {
+      SrcBlock "RecordedSignals"
+      SrcPort 1
+      Branch {
+        DstBlock "Scope"
+        DstPort 1
+      }
+      Branch {
+        DstBlock "Record"
+        DstPort 1
+      }
+    }
+  }
+}

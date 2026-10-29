@@ -1,0 +1,5 @@
+generated_slx/
+results_*/
+slprj/
+*.slxc
+*.autosave
