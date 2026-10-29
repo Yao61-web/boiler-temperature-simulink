@@ -1,15 +1,18 @@
-function result_dir = run_simulink_tests
+function result_dir = run_simulink_tests(max_step)
 % All dynamics run in Simulink via sim; this file only configures and exports.
 % Requires MATLAB + Simulink. No Control System Toolbox is required.
+if nargin < 1, max_step = 0.02; end
+assert(isscalar(max_step) && max_step > 0, 'Invalid maximum step.');
 here = fileparts(mfilename('fullpath'));
 assert(license('test','Simulink') == 1, 'A valid Simulink license is required.');
-result_dir = fullfile(here,['results_' datestr(now,'yyyymmdd_HHMMSS')]);
+result_dir = fullfile(here,['results_' datestr(now,'yyyymmdd_HHMMSS') sprintf('_h%g',max_step)]);
 assert(~exist(result_dir,'dir'),'Result directory already exists. Retry later.');
 mkdir(result_dir);
 diary(fullfile(result_dir,'execution_log.txt'));
 cleanup = onCleanup(@() diary('off')); %#ok<NASGU>
 fprintf('Run time: %s\n', datestr(now,31));
 disp(ver('MATLAB')); disp(ver('Simulink'));
+fprintf('Maximum step: %.17g s\n', max_step);
 models = {'boiler_single','boiler_cascade'};
 case_names = {'tracking','load','fuel','combined','robustness'};
 % Columns: r amplitude/time, load amplitude/time, fuel amplitude/time,
@@ -36,7 +39,7 @@ for j = 1:2
         warning('Diagram export failed: %s',err.message);
     end
     for k = 1:5
-        out = sim(configure(mdl,cases(k,:),1));
+        out = sim(configure(mdl,cases(k,:),1,max_step));
         data = out.simdata;
         [t,x] = unpack(data);
         assert(t(1)==0 && t(end)>=199.99 && all(diff(t)>0),'Incomplete time history.');
@@ -53,7 +56,7 @@ for j = 1:2
     end
     % Tune only against Simulink responses; compare 0.75, 1, 1.25 times PI.
     for factor = [.75 1.25]
-        out = sim(configure(mdl,cases(1,:),factor));
+        out = sim(configure(mdl,cases(1,:),factor,max_step));
         data=out.simdata; [t,x] = unpack(data);
         assert(all(isfinite(x(:))),'Nonfinite values in tuning run.');
         m = metrics(t,x,1);
@@ -95,10 +98,10 @@ fclose(f);
 fprintf('Results saved to: %s\n', result_dir);
 end
 
-function in = configure(mdl,c,factor)
+function in = configure(mdl,c,factor,max_step)
 in = Simulink.SimulationInput(mdl);
 in = in.setModelParameter('StopTime','200','Solver','ode45','SolverType','Variable-step', ...
-    'RelTol','1e-6','AbsTol','1e-8','MaxStep','0.02','ReturnWorkspaceOutputs','on');
+    'RelTol','1e-6','AbsTol','1e-8','MaxStep',num2str(max_step,17),'ReturnWorkspaceOutputs','on');
 names={'Reference','LoadDisturbance','FuelDisturbance'};
 for n=1:3
     in=in.setBlockParameter([mdl '/' names{n}], ...
@@ -119,10 +122,11 @@ end
 
 function m=metrics(t,x,k)
 mp=NaN; tr=NaN; ts=NaN; recovery=NaN; pass=NaN;
-if k==1, event=10; else, event=60; end
+if k==2 || k==3, event=60; else, event=10; end
 idx=t>=event; tt=t(idx); yy=x(idx,2); err=x(idx,3);
 peak=max(abs(yy));
-ss=mean(err(tt>=max(tt(end)-10,event)));
+tail=tt>=max(tt(end)-10,event);
+ss=trapz(tt(tail),err(tail))/(tt(end)-tt(find(tail,1)));
 iae=trapz(tt,abs(err));
 if k==1
     mp=max(0,(max(yy)-1)*100);

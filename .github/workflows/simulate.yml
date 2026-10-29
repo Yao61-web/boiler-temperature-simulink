@@ -20,7 +20,7 @@ jobs:
       - name: Build and simulate block diagrams
         uses: matlab-actions/run-command@bfa857648f4895aa98a446fe41c85e0788421ed5 # v3
         with:
-          command: build_models; run_simulink_tests;
+          command: run_cloud_validation;
       - name: Save models, raw data, figures and execution logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -29,5 +29,6 @@ jobs:
           path: |
             generated_slx/
             results_*/
+            validation/
           if-no-files-found: warn
           retention-days: 7
